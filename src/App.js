@@ -1,20 +1,18 @@
 import React, { Component } from 'react'
 import NavBar from './components/NavBar'
-import Card from '@material-ui/core/Card';
-import CardActions from '@material-ui/core/CardActions';
-import CardContent from '@material-ui/core/CardContent';
-import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import {DataStore} from './DataStore'
+import ResortInfo from './components/ResortInfo'
 
 import './App.css'
 
 class App extends Component {
   constructor(props) {
     super(props)
+    this.store = new DataStore()
     this.state = {
       selectedPass: '',
       zip: '',
@@ -37,22 +35,37 @@ class App extends Component {
         {pass: 'powderAlliance', state: 'MI', name: 'Boyne Highlands'},
         {pass: 'powderAlliance', state: 'MI', name: 'Boyne Mountain'},
         {pass: 'powderAlliance', state: 'NSW', name: 'Thredbo'}
-      ],
-
+      ]
     }
 
     this.onPassChange = this.onPassChange.bind(this)
+    this.onResortInfoUpdated = this.onResortInfoUpdated.bind(this)
+  }
+
+  componentDidMount(){
+    this.store.topics.resortInfoRetrieved.subscribe(this.onResortInfoUpdated)
+  }
+
+  onResortInfoUpdated(resort){
+    let joined = this.state.availableResorts.concat(resort)
+    this.setState(prevState => ({
+      availableResorts: [...prevState.availableResorts, resort]
+    }))
   }
 
   onPassChange(event){
     let pass = event.target.value
-    console.log('***', event)
     this.setState({selectedPass: event.target.value})
-    let resortsForPass = this.state.skiResorts.filter((sr) => {
+    this.setState(prevState => ({availableResorts: []}))
+    this.state.skiResorts.filter((sr) => {
       return sr.pass === pass
     })
-    this.setState({availableResorts: resortsForPass})
+    .map(r => {
+      r = this.store.getResortInfo(r)
+      return r 
+    })
   }
+
   render() {
     return (
       <div>
@@ -61,11 +74,7 @@ class App extends Component {
           <form noValidate autoComplete="off">
             <FormControl>
               <InputLabel htmlFor="pass-simple">SkiPass</InputLabel>
-              <Select
-                autoWidth={true}
-                value={this.state.selectedPass}
-                onChange={this.onPassChange}
-              >
+              <Select autoWidth={true} value={this.state.selectedPass} onChange={this.onPassChange}>
                 <MenuItem value={'ikon'}>Ikon</MenuItem>
                 <MenuItem value={'mountainCollective'}>Mountain Collective</MenuItem>
                 <MenuItem value={'powderAlliance'}>Powder Alliance</MenuItem>
@@ -73,31 +82,9 @@ class App extends Component {
             </FormControl>
           </form>
         </div>
-        {this.state.availableResorts.map((resort) => {
+        {this.state.availableResorts.map((resort, i) => {
           return (
-            <Card className='ski-result'>
-              <CardContent>
-                <span className='result-header'>
-                  <Typography variant="h5" color="textPrimary" gutterBottom>
-                    {resort.name}, {resort.state}
-                  </Typography>
-                </span>
-                <span><Typography color='textSecondary'>Driving Time:</Typography></span>
-                <span><Typography color='textSecondary'>Cheapest Flight:</Typography></span>
-                <span><Typography color='textSecondary'>Recent Snowfall:</Typography></span>
-                <span><Typography color='textSecondary'>Predicted Snowfall:</Typography></span>
-                <Typography variant="h5" component="h2">
-                </Typography>
-                <Typography color="textSecondary">
-                  adjective
-                </Typography>
-                <Typography component="p">
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button size="small">Learn More</Button>
-              </CardActions>
-            </Card>
+            <ResortInfo resort={resort} key={i}/>
           )
         })
       }

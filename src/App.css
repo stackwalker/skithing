@@ -30,6 +30,10 @@
 .ski-result{
   margin-bottom: 6px;
 }
+.ski-result span{
+  display: inline-flex;
+  margin-right: 12px;
+}
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
